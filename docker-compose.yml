@@ -1,0 +1,51 @@
+version: "3.7"
+
+services:
+  controller:
+    container_name: controller_service
+    image: alexseipopov/controller_service:latest
+    ports:
+      - "3065:3065"
+    depends_on:
+      - db_service
+    restart: always
+  auth_service:
+    container_name: auth_service
+    image: alexseipopov/auth_service:latest
+    ports:
+      - "3030:3030"
+    depends_on:
+      - db_service
+    restart: always
+  school_service:
+    container_name: school_service
+    image: alexseipopov/school_service:latest
+    ports:
+      - "3081:3081"
+    depends_on:
+      - db_service
+    restart: always
+  db_service:
+    container_name: db_service
+    image: alexseipopov/db_service:latest
+    ports:
+      - "3061:3061"
+    env_file:
+      - ./.env_docker
+    depends_on:
+      - db
+    restart: always
+  db:
+    container_name: capybaras_21_dbase
+    image: postgres:15
+    ports:
+      - "5032:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env_docker
+    restart: always
+
+volumes:
+    db-data:
+
