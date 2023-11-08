@@ -25,6 +25,14 @@ services:
     depends_on:
       - db_service
     restart: always
+  user_service:
+    container_name: user_service
+    image: alexseipopov/user_service:latest
+    ports:
+      - "3101:3101"
+    depends_on:
+      - db_service
+    restart: always
   db_service:
     container_name: db_service
     image: alexseipopov/db_service:latest

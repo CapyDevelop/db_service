@@ -1,5 +1,3 @@
-import os
-
 from dotenv import load_dotenv
 
 from db_handler import serve
