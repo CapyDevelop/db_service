@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import uuid
@@ -60,6 +61,7 @@ class DBService(pb2_grpc.DBServiceServicer):
         user_access.refresh_token = request.refresh_token
         user_access.expires_in = request.expires_in
         user_access.session_state = request.session_state
+        user_access.time_create = datetime.datetime.now()
         session.commit()
         session.close()
         logging.info("[ Set access data ] - Success. ----- END -----")
