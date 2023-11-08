@@ -1,13 +1,14 @@
 import re
+import uuid
 
+import requests
 from flask import request
 
-from . import routes
-from db_handler.models.user import User, UserAccess
-import requests
-import uuid
 from db_handler.gql import get_user_info
+from db_handler.models.user import User, UserAccess
+
 from .. import db
+from . import routes
 
 login_action_pattern = re.compile(r'(?P<LoginActionURL>https://.+?)"')
 oauth_code_pattern = re.compile(r'code=(?P<OAuthCode>[^&$]+)[&$]?')

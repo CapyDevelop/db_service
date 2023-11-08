@@ -1,17 +1,17 @@
-import os
-import grpc
-import uuid
 import logging
-
+import os
+import uuid
 from concurrent import futures
+
+import db_service.db_handler_pb2 as pb2
+import db_service.db_handler_pb2_grpc as pb2_grpc
+import grpc
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
+
 from db_handler.gql import get_user_info
 from db_handler.models.user import User, UserAccess
-
-import db_service.db_handler_pb2_grpc as pb2_grpc
-import db_service.db_handler_pb2 as pb2
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG,
@@ -26,8 +26,8 @@ class DBService(pb2_grpc.DBServiceServicer):
         logging.info("[ Check user exists ] - Check user exists request. ----- START -----")
         try:
             logging.info(f"[ Check user exists ] - school_user_id: {request.school_user_id}")
-        except Exception as e:
-            logging.info(f"[ Check user exists ] - school_user_id:None")
+        except Exception:
+            logging.info("[ Check user exists ] - school_user_id:None")
         session = Session()
         user = session.query(User).filter(User.school_user_id == request.school_user_id).first()
         session.close()
