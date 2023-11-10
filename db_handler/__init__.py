@@ -52,6 +52,7 @@ class DBService(pb2_grpc.DBServiceServicer):
     def set_access_data(self, request, context):
         logging.info("[ Set access data ] - Set access data request. ----- START -----")
         session = Session()
+        logging.info(f"[ Set access data ] - school_user_id: {request.school_user_id}")
         user = session.query(User).filter(User.school_user_id == request.school_user_id).first()
         if not user:
             logging.info("[ Set access data ] - Not such user. ----- END -----")
@@ -70,10 +71,9 @@ class DBService(pb2_grpc.DBServiceServicer):
     def set_new_user(self, request, context):
         logging.info("[ Set new user ] - Set new user request. ----- START -----")
         session = Session()
-        capy_uuid = str(uuid.uuid4())
         user = User(
             school_user_id=request.school_user_id,
-            capy_uuid=capy_uuid
+            capy_uuid=request.uuid
         )
         session.add(user)
         session.commit()
@@ -88,13 +88,15 @@ class DBService(pb2_grpc.DBServiceServicer):
         session.commit()
         session.close()
         logging.info("[ Set new user ] - Success. ----- END -----")
-        return pb2.SetNewUserResponse(status=0, description="Success", capy_uuid=capy_uuid)
+        return pb2.SetNewUserResponse(status=0, description="Success", capy_uuid=request.uuid)
 
     def get_access_token_by_uuid(self, request, context):
         logging.info("[ Get access token by uuid ] - Get access token by uuid request. ----- START -----")
         session = Session()
+        logging.info(f"[ Get access token by uuid ] - uuid: {request.uuid}")
         user = session.query(User).filter(User.capy_uuid == request.uuid).first()
         if not user:
+            session.close()
             logging.info("[ Get access token by uuid ] - Not such user. ----- END -----")
             return pb2.GetAccessTokenByUUIDResponse(
                 status=1,
