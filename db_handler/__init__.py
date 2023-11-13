@@ -12,7 +12,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from db_handler.gql import get_user_info
-from db_handler.models.user import User, UserAccess
+# from db_handler.models.user import User, UserAccess
+from orm_models import User, UserAccess
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG,

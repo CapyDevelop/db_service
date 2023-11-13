@@ -4,6 +4,7 @@ certifi==2023.7.22
 charset-normalizer==3.3.2
 click==8.1.7
 db-service-grpc @ git+https://github.com/alexseipopov/capybaras_db_handler_grpc.git@main
+flake8==6.1.0
 Flask==3.0.0
 Flask-Migrate==4.0.5
 Flask-SQLAlchemy==3.1.1
@@ -11,12 +12,17 @@ greenlet==3.0.1
 grpcio==1.59.2
 grpcio-tools==1.59.2
 idna==3.4
+isort==5.12.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
 Mako==1.2.4
 MarkupSafe==2.1.3
+mccabe==0.7.0
+orm-models @ git+https://github.com/alexseipopov/capybaras_orm_models.git@main
 protobuf==4.25.0
 psycopg2-binary==2.9.9
+pycodestyle==2.11.1
+pyflakes==3.1.0
 python-dotenv==1.0.0
 requests==2.31.0
 SQLAlchemy==2.0.23
