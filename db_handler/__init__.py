@@ -8,12 +8,12 @@ import db_service.db_handler_pb2 as pb2
 import db_service.db_handler_pb2_grpc as pb2_grpc
 import grpc
 from dotenv import load_dotenv
+# from db_handler.models.user import User, UserAccess
+from orm_models import User, UserAccess
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from db_handler.gql import get_user_info
-# from db_handler.models.user import User, UserAccess
-from orm_models import User, UserAccess
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG,
