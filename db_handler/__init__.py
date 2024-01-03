@@ -7,7 +7,7 @@ import db_service.db_handler_pb2 as pb2
 import db_service.db_handler_pb2_grpc as pb2_grpc
 import grpc
 from dotenv import load_dotenv
-from orm_models import User, UserAccess, UserAvatar
+from orm_models import User, UserAccess, UserAvatar, Capybara
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -165,6 +165,51 @@ class DBService(pb2_grpc.DBServiceServicer):
         logging.info("[ Get avatar ] - Success. ----- END -----")
         return pb2.GetAvatarResponse(
             avatar=user_avatar.avatar,
+            status=0,
+            description="Success"
+        )
+
+    def get_peer_info(self, request, context):
+        uuid = request.request_uuid
+        logging.info("[ Get peer info ] - Get peer info request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == uuid).first()
+        if not user:
+            logging.info("[ Get peer info ] - Not such user. ----- END -----")
+            return pb2.GetPeerInfoResponse(
+                status=1,
+                description="Not such user"
+            )
+        session.close()
+        nickname = request.nickname
+        session = Session()
+        print(f"{nickname}@student,21-school.ru")
+        capybara = session.query(Capybara).filter(Capybara.login == f"{nickname}@student.21-school.ru").first()
+        if not capybara:
+            logging.info("[ Get peer info ] - Not such capybara peer. ----- END -----")
+            session.close()
+            return pb2.GetPeerInfoResponse(
+                status=1,
+                description="Запрашиваемый пользователь не найден в капибарах"
+            )
+        user = session.query(User).filter(User.school_user_id == capybara.school_user_id).first()
+        if not user:
+            session.close()
+            logging.info("[ Get peer info ] - Not such user peer. ----- END -----")
+            return pb2.GetPeerInfoResponse(
+                status=1,
+                description="Запрашиваемый пользователь не зарегистрирован на Платформе"
+            )
+        avatar = session.query(UserAvatar).filter(UserAvatar.user_id == user.id).order_by(UserAvatar.id.desc()).first()
+        if not avatar:
+            avatar_path = "https://capyavatars.storage.yandexcloud.net/avatar/default/default.webp"
+        else:
+            avatar_path = "https://capyavatars.storage.yandexcloud.net/avatar/" + str(user.capy_uuid) + "/" + avatar.avatar
+        session.close()
+        logging.info("[ Get peer info ] - Success. ----- END -----")
+        return pb2.GetPeerInfoResponse(
+            login=capybara.login,
+            avatar=avatar_path,
             status=0,
             description="Success"
         )
