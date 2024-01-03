@@ -7,7 +7,7 @@ import db_service.db_handler_pb2 as pb2
 import db_service.db_handler_pb2_grpc as pb2_grpc
 import grpc
 from dotenv import load_dotenv
-from orm_models import User, UserAccess, UserAvatar, Capybara
+from orm_models import Capybara, User, UserAccess, UserAvatar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
