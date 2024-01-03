@@ -9,7 +9,7 @@ import db_service.db_handler_pb2_grpc as pb2_grpc
 import grpc
 from dotenv import load_dotenv
 # from db_handler.models.user import User, UserAccess
-from orm_models import User, UserAccess
+from orm_models import User, UserAccess, UserAvatar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -117,6 +117,56 @@ class DBService(pb2_grpc.DBServiceServicer):
             school_user_id=user.school_user_id,
             expires_in=user_access.expires_in,
             time_create=int(user_access.time_create.timestamp()),
+            status=0,
+            description="Success"
+        )
+
+    def set_avatar(self, request, context):
+        uuid = request.uuid
+        avatar = request.avatar
+        logging.info("[ Set avatar ] - Set avatar request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == uuid).first()
+        if not user:
+            logging.info("[ Set avatar ] - Not such user. ----- END -----")
+            return pb2.SetAvatarResponse(
+                status=1,
+                description="Not match"
+            )
+        user_avatar = UserAvatar(
+            user_id=user.id,
+            avatar=avatar
+        )
+        session.add(user_avatar)
+        session.commit()
+        session.close()
+        logging.info("[ Set avatar ] - Success. ----- END -----")
+        return pb2.SetAvatarResponse(
+            status=0,
+            description="Success"
+        )
+
+    def get_avatar(self, request, context):
+        logging.info("[ Get avatar ] - Get avatar request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == request.uuid).first()
+        if not user:
+            logging.info("[ Get avatar ] - Not such user. ----- END -----")
+            return pb2.GetAvatarResponse(
+                status=1,
+                description="Not match"
+            )
+        user_avatar = session.query(UserAvatar).filter(UserAvatar.user_id == user.id).order_by(UserAvatar.id.desc()).first()
+        session.close()
+        if not user_avatar:
+            logging.info("[ Get avatar ] - No set user avatar. ----- END -----")
+            return pb2.GetAvatarResponse(
+                status=0,
+                description="Default avatar"
+            )
+        logging.info("[ Get avatar ] - Success. ----- END -----")
+        return pb2.GetAvatarResponse(
+            avatar=user_avatar.avatar,
             status=0,
             description="Success"
         )
