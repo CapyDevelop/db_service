@@ -7,8 +7,8 @@ import db_service.db_handler_pb2 as pb2
 import db_service.db_handler_pb2_grpc as pb2_grpc
 import grpc
 from dotenv import load_dotenv
-from orm_models import Capybara, User, UserAccess, UserAvatar
-from sqlalchemy import create_engine
+from orm_models import Capybara, Friend, User, UserAccess, UserAvatar
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
 from db_handler.gql import get_user_info
@@ -210,6 +210,140 @@ class DBService(pb2_grpc.DBServiceServicer):
         return pb2.GetPeerInfoResponse(
             login=capybara.login,
             avatar=avatar_path,
+            status=0,
+            description="Success"
+        )
+
+    def get_friend_stats(self, request, context):
+        uuid = request.uuid
+        logging.info("[ Get friend stats ] - Get friend stats request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == uuid).first()
+        if not user:
+            session.close()
+            logging.info("[ Get friend stats ] - Not such user. ----- END -----")
+            return pb2.GetFriendStatsResponse(
+                status=1,
+                description="Пользователь не найден"
+            )
+
+        friends_count = session.query(
+            func.count()
+        ).select_from(Friend).filter(Friend.peer_1 == user.id).scalar()
+
+        subscribers_count = session.query(func.count()).filter(
+            Friend.peer_2 == user.id
+        ).scalar()
+
+        session.close()
+        logging.info("[ Get friend stats ] - Success. ----- END -----")
+        return pb2.GetFriendStatsResponse(
+            friends=friends_count,
+            subscribers=subscribers_count,
+            status=0,
+            description="Success"
+        )
+
+    def search_user(self, request, context):
+        logging.info("[ Search user ] - Search user request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == request.uuid).first()
+        if not user:
+            session.close()
+            logging.info("[ Search user ] - Not such user. ----- END -----")
+            return pb2.SearchUserResponse(
+                status=1,
+                description="Пользователь не найден"
+            )
+        friends = []
+        on_platform = []
+        out_platform = []
+        # ищу среди капибар тех, у кого в нике есть nickname
+        users = session.query(Capybara).filter(Capybara.login.like(f"%{request.nickname}%@student.21-school.ru")).all()
+        for user_ in users:
+            user_school_id = user_.school_user_id
+            tmp = session.query(User).filter(User.school_user_id == user_school_id).first()
+            if not tmp:
+                out_platform.append(pb2.SearchedUser(
+                    login=user_.login,
+                    avatar="https://capyavatars.storage.yandexcloud.net/avatar/default/no-user.webp"
+                ))
+            else:
+                print(user.id, tmp.id)
+                friend = session.query(Friend).filter(Friend.peer_1 == user.id, Friend.peer_2 == tmp.id).first()
+                avatar = session.query(UserAvatar).filter(UserAvatar.user_id == tmp.id).order_by(
+                    UserAvatar.id.desc()).first()
+                if not avatar:
+                    avatar_path = "https://capyavatars.storage.yandexcloud.net/avatar/default/default.webp"
+                else:
+                    avatar_path = "https://capyavatars.storage.yandexcloud.net/avatar/" + str(
+                        tmp.capy_uuid) + "/" + avatar.avatar
+                if friend:
+                    friends.append(pb2.SearchedUser(
+                        login=user_.login,
+                        avatar=avatar_path
+                    ))
+                else:
+                    if (user.id == tmp.id):
+                        continue
+                    on_platform.append(pb2.SearchedUser(
+                        login=user_.login,
+                        avatar=avatar_path
+                    ))
+        logging.info("[ Search user ] - Success. ----- END -----")
+        session.close()
+        return pb2.SearchUserResponse(
+            status=0,
+            description="Success",
+            friends=friends,
+            on_platform=on_platform,
+            out_platform=out_platform
+        )
+
+    def add_friend(self, request, context):
+        logging.info("[ Add friend ] - Add friend request. ----- START -----")
+        session = Session()
+        user = session.query(User).filter(User.capy_uuid == request.uuid).first()
+        if not user:
+            session.close()
+            logging.info("[ Add friend ] - Not such user. ----- END -----")
+            return pb2.AddFriendResponse(
+                status=1,
+                description="Пользователь не найден"
+            )
+        capybara = session.query(Capybara).filter(Capybara.login == request.login).first()
+        if not capybara:
+            session.close()
+            logging.info("[ Add friend ] - Not such capybara. ----- END -----")
+            return pb2.AddFriendResponse(
+                status=1,
+                description="Пользователь не найден"
+            )
+        user_peer = session.query(User).filter(User.school_user_id == capybara.school_user_id).first()
+        if not user_peer:
+            session.close()
+            logging.info("[ Add friend ] - Not such user peer. ----- END -----")
+            return pb2.AddFriendResponse(
+                status=1,
+                description="Пользователь не найден"
+            )
+        friend = session.query(Friend).filter(Friend.peer_1 == user.id, Friend.peer_2 == user_peer.id).first()
+        if friend:
+            session.close()
+            logging.info("[ Add friend ] - Already friends. ----- END -----")
+            return pb2.AddFriendResponse(
+                status=1,
+                description="Пользователь уже в друзьях"
+            )
+        friend = Friend(
+            peer_1=user.id,
+            peer_2=user_peer.id
+        )
+        session.add(friend)
+        session.commit()
+        session.close()
+        logging.info("[ Add friend ] - Success. ----- END -----")
+        return pb2.AddFriendResponse(
             status=0,
             description="Success"
         )
