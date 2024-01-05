@@ -259,7 +259,7 @@ class DBService(pb2_grpc.DBServiceServicer):
         on_platform = []
         out_platform = []
         # ищу среди капибар тех, у кого в нике есть nickname
-        users = session.query(Capybara).filter(Capybara.login.like(f"%{request.nickname}%@student.21-school.ru")).all()
+        users = session.query(Capybara).filter(Capybara.login.like(f"%{request.nickname}%@student.21-school.ru"), Capybara.is_student == True).all()
         for user_ in users:
             user_school_id = user_.school_user_id
             tmp = session.query(User).filter(User.school_user_id == user_school_id).first()
